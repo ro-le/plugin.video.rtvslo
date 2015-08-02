@@ -2,7 +2,6 @@
 <addon id="plugin.video.rtvslo" name="RTV Slovenija" version="1.0.0" provider-name="royle">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0"/>
-		<import addon="script.module.elementtree" version="1.2.8"/>
 	</requires>
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>audio video</provides>
