@@ -1,3 +1,10 @@
-v1.0.0 (02.08.2015)
-
- - Initial version, basic functionality.
+v2.0.2
+ - added new functionallity: new shows
+ - added new functionallity: new clips
+v2.0.1
+ - added new functionallity: "next page" markers
+ - support for older "ava_archive01" media
+v2.0.0
+ - Works with the new rtvslo website, since Jan 2016
+v0.0.1
+ - First buggy version ever, for testing purposes only! Broken since 2016 because of the website redesign!
