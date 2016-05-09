@@ -1,203 +1,96 @@
+# -*- coding: utf-8 -*-
 import sys
-import urlparse
-import re
 import urllib
 import urllib2
-import xml.etree.ElementTree as ET
+import urlparse
+import json
 import xbmcgui
 import xbmcplugin
+#######################################
 
-#scrape podcast info from rtvslo.si
-class Podcast:
-	'Audio/video podcast'
-	def __init__(self):
-		self.name = ""
-		self.url = ""
-		self.img = ""
-		self.type = -1	#0 = audio, 1 = video
+#classes
+class Show():
+	'SHOW'
+	def __init__(self, showId, mediaType, title, link, thumbnail):
+		self.showId = showId
+		self.mediaType = mediaType
+		self.title = title
+		self.link = link
+		self.thumbnail = thumbnail
 
-#parse media info from xml
-class Media:
-	'Podcast media info'
-	def __init__(self):
-		self.title = ""
-		self.date = ""
-		self.url = ""
-		self.length = 0
-		self.desc = ""
-		self.type = -1	#0 = audio, 1 = video
+class Stream():
+	'STREAM'
+	def __init__(self, streamId, mediaType, title, date, duration, link, thumbnail):
+		self.streamId = streamId
+		self.mediaType = mediaType
+		self.title = title
+		self.date = date
+		self.duration = duration
+		self.link = link
+		self.thumbnail = thumbnail
+#######################################
 
-	def isValid(self):
-		#return True
-		if self.title is None:
-			return False
-		if self.date is None:
-			return False
-		if self.url is None:
-			return False
-		if self.length is None:
-			return False
-		if self.type == -1:
-			return False
-		return True
-
-#scrapes xml links (and some additional info) of all available podcasts
-def scrapeRtvSlo(rtvsloUrl, podcastLink, contentType):
-
-	#variables
-	mediaType = -1
-	audioTag = "Avdio podcasti"
-	videoTag = "Video podcasti"
-	podcastList = []
-	duplicateList = []
-
-	#connect
-	rtvsloHtml = urllib2.urlopen(rtvsloUrl)
-	rtvsloData = rtvsloHtml.read().split("\n")
-	rtvsloHtml.close()
-
-	#scrape
-	for line in rtvsloData:
-
-		#figure out media type
-		if audioTag in line:
-			mediaType = 0
-		elif videoTag in line:
-			mediaType = 1
-
-		#find podcast xml files
-		if podcastLink in line:
-
-			#create new object
-			p = Podcast()
-
-			#regex html tags
-			stripped = line.strip()
-			tags = re.findall('[a-z]+?=".+?"', stripped)
-
-			#update key-value attribute pairs
-			for tag in tags:
-				attr = tag.split("=")
-				key = attr[0]
-				val = attr[1].strip("\"")
-				if key == "href":
-					p.url = val
-				elif key == "title":
-					p.name = escape(val)
-				elif key == "src":
-					p.img = val
-
-			#append podcast to array (if not a duplicate and if proper type)
-			if p.name not in duplicateList:
-				if mediaType == contentType:
-					p.type = mediaType
-					podcastList.append(p)
-					duplicateList.append(p.name)
-	return podcastList
-
-#read and parse podcast xml
-def parsePodcastXml(p):
-
-	#variables
-	mediaType = -1
-	mediaList = []
-
-	#connect
-	podcastXml = urllib2.urlopen(p.url)
-	podcastData = podcastXml.read()
-	podcastXml.close()
-
-	#parse
-	root = ET.fromstring(podcastData)
-	channel = root.find("channel")
-	if channel is not None:
-		item = channel.findall("item")
-		if item is not None:
-			for i in item:
-
-				#create Media object
-				m = Media()
-
-				#update title
-				title = i.find("title")
-				if title is not None:
-					m.title = escape(title.text)
-				#update date
-				pubDate = i.find("pubDate")
-				if pubDate is not None:
-					dt = pubDate.text.split()
-					m.date = dt[1]+"."+getMonth(dt[2])+"."+dt[3]
-				#update description
-				desc = i.find("description")
-				if desc is not None:
-					m.desc = escape(desc.text)
-				#update url, length and media type
-				enclosure = i.find("enclosure")
-				if enclosure is not None:
-					url = enclosure.get("url")
-					if url is not None:
-						m.url = url
-					avType = enclosure.get("type")
-					if avType is not None:
-						mediaType = -1
-						if avType == "audio/mpeg":
-							mediaType = 0
-						elif avType == "video/mp4":
-							mediaType = 1
-						m.type = mediaType
-					length = enclosure.get("length")
-					if length is not None:
-						laudio = int(int(length)/16000)
-						lvideo = int(int(length)/117000)
-						if mediaType == 0:
-							m.length = laudio	#s
-						elif mediaType == 1:
-							m.length = lvideo/60	#min
-						
-
-				#add to list if valid
-				if m.isValid():
-					mediaList.append(m)
-	return mediaList
-
-#convert month from string to int
-def getMonth(m):
-	mDict = {'Jan': '1',
-			'Feb': '2',
-			'Mar': '3',
-			'Apr': '4',
-			'May': '5',
-			'Jun': '6',
-			'Jul': '7',
-			'Aug': '8',
-			'Sep': '9',
-			'Oct': '10',
-			'Nov': '11',
-			'Dec': '12'}
-	return mDict.get(m)
-
-#escapes some weird characters
-def escape(s):
-	s = s.replace('<br />', ' ')
-	s = s.replace('&lt;', '<')
-	s = s.replace('&gt;', '>')
-	s = s.replace('&amp;', '&')
-	s = s.replace('&#039;', '\'')
-	s = s.replace('&quot;', '"')
-	s = s.replace('&nbsp;', ' ')
-	s = s.replace('&#x26;', '&')
-	s = s.replace('&#x27;', '\'')
-	return s
-
+#functions
 def build_url(base, query):
 	return base+'?'+urllib.urlencode(query)
 
-#MAIN
+def downloadSourceToString(url):
+	rtvsloHtml = urllib2.urlopen(url)
+	rtvsloData = rtvsloHtml.read()
+	rtvsloHtml.close()
+	return rtvsloData
+
+def parseShowsToShowList(js):
+	showList = []
+	j = json.loads(js)
+	j = j['response']['response']
+	for show in j:
+		showList.append(Show(show['id'], show['mediaType'], show['title'], show['link'], show['thumbnail']['show']))
+	return showList
+
+def parseShowToStreamList(js):
+	streamList = []
+	j = json.loads(js)
+	j = j['response']['recordings']
+	for stream in j:
+		streamList.append(Stream(stream['id'], stream['mediaType'], stream['title'], stream['date'], stream['duration'], stream['link'], stream['images']['thumb']))
+	return streamList
+
+def parseStreamToPlaylist(js):
+	j = json.loads(js)
+	j = j['response']
+
+	#newer video streams usually have this format
+	try:
+		playlist_type1 = j['addaptiveMedia']['hls']
+		return playlist_type1
+	except Exception as e:
+		pass
+
+	#audio streams and some older video streams have this format
+	try:
+		playlist_type2_part1 = j['mediaFiles'][0]['streamers']['http']
+		if playlist_type2_part1.find('ava_archive02') > 0:
+			playlist_type2_part1 = playlist_type2_part1.replace("ava_archive02", "podcast\/ava_archive02\/")
+		elif playlist_type2_part1.find('ava_archive01') > 0:
+			playlist_type2_part1 = playlist_type2_part1.replace("ava_archive01", "ava_archive01\/")
+		elif playlist_type2_part1.find('ava_archive00') > 0:
+			playlist_type2_part1 = playlist_type2_part1.replace("ava_archive00", "ava_archive00\/")
+		playlist_type2_part2 = j['mediaFiles'][0]['filename']
+		return playlist_type2_part1+playlist_type2_part2
+	except Exception as e:
+		pass
+
+	#there is no hope anymore, you will be rickrolled :/
+	return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+#######################################
+
+#main
 if __name__ == "__main__":
 	try:
 		#get add-on base url
 		base = str(sys.argv[0])
-		
+	
 		#get add-on handle
 		handle = int(sys.argv[1])
 
@@ -205,8 +98,7 @@ if __name__ == "__main__":
 		args = urlparse.parse_qs(sys.argv[2][1:])
 
 		#get content type
-		#contentType == "audio"
-		#contentType == "video"
+		#contentType == "audio" || "video"
 		contentType = str(args.get('content_type')[0])
 		contentTypeInt = -1
 		if contentType == 'audio':
@@ -216,40 +108,257 @@ if __name__ == "__main__":
 			contentTypeInt = 1
 			xbmcplugin.setContent(handle, 'tvshows')
 
-		#get mode
-		#mode == -1: list available podcasts
-		#mode >= 0: list available media from selected podcast
-		modeArg = args.get('mode', ['-1'])
+		#get mode and other parameters
+		modeArg = args.get('mode', ['0'])
 		mode = int(modeArg[0])
-
-		#variables
-		rtvsloUrl = "http://www.rtvslo.si/podcast"
-		podcastUrl = "http://podcast.rtvslo.si/"
-		podcastList = []
-		mediaList = []
+		letterArg = args.get('letter', ['A'])
+		letter = letterArg[0]
+		idArg = args.get('id', [''])
+		id_ = idArg[0]
+		pageArg = args.get('page', ['0'])
+		page = int(pageArg[0])
 
 		#step 1: Collect underpants...
-		podcastList = scrapeRtvSlo(rtvsloUrl, podcastUrl, contentTypeInt)
-		if mode == -1:
-			pIdx = 0
-			for p in podcastList:
-				li = xbmcgui.ListItem(p.name, iconImage=p.img)
-				url = build_url(base, {'content_type': contentType, 'mode': pIdx})
-				xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
-				pIdx = pIdx + 1
+		if mode == 0:
+			#mode == 0: list main menu (ODDAJE, ARHIV)
+			#ARHIV 1/2
+			li = xbmcgui.ListItem('Nove oddaje >')
+			url = build_url(base, {'content_type': contentType, 'mode': 21})
+			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+			#ARHIV 2/2
+			li = xbmcgui.ListItem('Novi prispevki >')
+			url = build_url(base, {'content_type': contentType, 'mode': 31})
+			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+			#ODDAJE
+			li = xbmcgui.ListItem('Arhiv oddaj >')
+			url = build_url(base, {'content_type': contentType, 'mode': 11})
+			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 
 		#step 2: ...?...
+		elif mode == 11:
+			#mode == 11: list letters menu (ODDAJE)
+			oddaje = ['A','B','C','Č','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','Š','T','U','V','W','Z','Ž','0']
+			for o in oddaje:
+				li = xbmcgui.ListItem(o)
+				url = build_url(base, {'content_type': contentType, 'mode': 12, 'letter': o})
+				xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+		elif mode == 12:
+			#mode == 12: letter selected, list shows (ODDAJE)
+
+			#url parameters
+			url_part1 = 'http://api.rtvslo.si/ava/getShowsSearch?client_id='
+			url_part2 = '&sort=title&order=asc&pageNumber=0&pageSize=100&hidden=0&start='
+			url_part3 = '&callback=jQuery111306175395867148092_1462381908718&_=1462381908719'
+			client_id = '82013fb3a531d5414f478747c1aca622'
+			start = letter
+
+			#download response from rtvslo api
+			js = downloadSourceToString(url_part1+client_id+url_part2+start+url_part3)
+
+			#extract json from response
+			x = js.find('({')
+			y = js.rfind('});')
+			if x < 0 or y < 0:
+				xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+			else:
+				#parse json to a list of shows
+				js = js[x+1:y+1]
+				showList = parseShowsToShowList(js)
+
+				#list shows
+				for show in showList:
+					if (contentType == 'audio' and show.mediaType == 'radio') or (contentType == 'video' and show.mediaType == 'tv'):
+						li = xbmcgui.ListItem(show.title, iconImage=show.thumbnail)
+						url = build_url(base, {'content_type': contentType, 'mode': 13, 'page': 0, 'id': show.showId})
+						xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+		elif mode == 13:
+			#mode == 13: show selected, list streams (ODDAJE)
+
+			#url parameters
+			url_part1 = 'http://api.rtvslo.si/ava/getSearch?client_id='
+			url_part2 = '&pageNumber='
+			url_part3 = '&pageSize=12&clip=show&sort=date&order=desc&from=1991-01-01&showId='
+			url_part4 = '&callback=jQuery11130007442688502199202_1462387460339&_=1462387460342'
+			client_id = '82013fb3a531d5414f478747c1aca622'
+			page_no = page
+			show_id = id_
+
+			#download response from rtvslo api
+			js = downloadSourceToString(url_part1+client_id+url_part2+str(page_no)+url_part3+show_id+url_part4)
+
+			#extract json from response
+			x = js.find('({')
+			y = js.rfind('});')
+			if x < 0 or y < 0:
+				xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+			else:
+				#parse json to a list of streams
+				js = js[x+1:y+1]
+				streamList = parseShowToStreamList(js)
+
+				#find playlists and list streams
+				for stream in streamList:
+
+					#url parameters
+					url_part1 = 'http://api.rtvslo.si/ava/getRecording/'
+					url_part2 = '?client_id='
+					url_part3 = '&callback=jQuery1113023734881856870338_1462389077542&_=1462389077543'
+					client_id = '82013fb3a531d5414f478747c1aca622'
+					recording = stream.streamId
+
+					#download response from rtvslo api
+					js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3)
+
+					#extract json from response
+					x = js.find('({')
+					y = js.rfind('});')
+					if x < 0 or y < 0:
+						xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+					else:
+						#parse json to get a playlist
+						js = js[x+1:y+1]
+						playlist = parseStreamToPlaylist(js)
+
+						#list stream
+						li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
+						if contentTypeInt == 0:
+							li.setInfo('music', {'duration': stream.duration})
+						elif contentTypeInt == 1:
+							li.setInfo('video', {'duration': stream.duration})
+						xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
+
+				#show next page marker if needed
+				if len(streamList) > 0:
+					page_no = page_no + 1
+					li = xbmcgui.ListItem('> '+str(page_no)+' >')
+					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no, 'id': show_id})
+					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+		elif mode == 21:
+			#mode == 21: list new shows (ARHIV 1/2)
+
+			#url parameters
+			url_part1 = 'http://api.rtvslo.si/ava/getSearch?client_id='
+			url_part2 = '&q=&showTypeId=&sort=date&order=desc&pageSize=12&pageNumber='
+			url_part3 = '&source=&hearingAid=0&clip=show&from=2007-01-01&to=&WPId=&zkp=0&callback=jQuery11130980077945755083_1462458118383&_=1462458118384'
+			client_id = '82013fb3a531d5414f478747c1aca622'
+			page_no = page
+
+			#download response from rtvslo api
+			js = downloadSourceToString(url_part1+client_id+url_part2+str(page_no)+url_part3)
+
+			#extract json from response
+			x = js.find('({')
+			y = js.rfind('});')
+			if x < 0 or y < 0:
+				xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+			else:
+				#parse json to a list of streams
+				js = js[x+1:y+1]
+				streamList = parseShowToStreamList(js)
+
+				#find playlists and list streams
+				for stream in streamList:
+					if (contentTypeInt == 0 and stream.mediaType == 'audio') or (contentTypeInt == 1 and stream.mediaType == 'video'):
+						#url parameters
+						url_part1 = 'http://api.rtvslo.si/ava/getRecording/'
+						url_part2 = '?client_id='
+						url_part3 = '&callback=jQuery1113023734881856870338_1462389077542&_=1462389077543'
+						client_id = '82013fb3a531d5414f478747c1aca622'
+						recording = stream.streamId
+
+						#download response from rtvslo api
+						js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3)
+
+						#extract json from response
+						x = js.find('({')
+						y = js.rfind('});')
+						if x < 0 or y < 0:
+							xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+						else:
+							#parse json to get a playlist
+							js = js[x+1:y+1]
+							playlist = parseStreamToPlaylist(js)
+
+							#list stream
+							li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
+							if contentTypeInt == 0:
+								li.setInfo('music', {'duration': stream.duration})
+							elif contentTypeInt == 1:
+								li.setInfo('video', {'duration': stream.duration})
+							xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
+
+				#show next page marker if needed
+				if len(streamList) > 0:
+					page_no = page_no + 1
+					li = xbmcgui.ListItem('> '+str(page_no)+' >')
+					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no})
+					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+		elif mode == 31:
+			#mode == 21: list new news stories (ARHIV 2/2)
+
+			#url parameters
+			url_part1 = 'http://api.rtvslo.si/ava/getSearch?client_id='
+			url_part2 = '&q=&showTypeId=&sort=date&order=desc&pageSize=12&pageNumber='
+			url_part3 = '&source=&hearingAid=0&clip=clip&from=2007-01-01&to=&WPId=&zkp=0&callback=jQuery111307342043845078507_1462458568679&_=1462458568680'
+			client_id = '82013fb3a531d5414f478747c1aca622'
+			page_no = page
+
+			#download response from rtvslo api
+			js = downloadSourceToString(url_part1+client_id+url_part2+str(page_no)+url_part3)
+
+			#extract json from response
+			x = js.find('({')
+			y = js.rfind('});')
+			if x < 0 or y < 0:
+				xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+			else:
+				#parse json to a list of streams
+				js = js[x+1:y+1]
+				streamList = parseShowToStreamList(js)
+
+				#find playlists and list streams
+				for stream in streamList:
+					if (contentTypeInt == 0 and stream.mediaType == 'audio') or (contentTypeInt == 1 and stream.mediaType == 'video'):
+						#url parameters
+						url_part1 = 'http://api.rtvslo.si/ava/getRecording/'
+						url_part2 = '?client_id='
+						url_part3 = '&callback=jQuery1113023734881856870338_1462389077542&_=1462389077543'
+						client_id = '82013fb3a531d5414f478747c1aca622'
+						recording = stream.streamId
+
+						#download response from rtvslo api
+						js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3)
+
+						#extract json from response
+						x = js.find('({')
+						y = js.rfind('});')
+						if x < 0 or y < 0:
+							xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+						else:
+							#parse json to get a playlist
+							js = js[x+1:y+1]
+							playlist = parseStreamToPlaylist(js)
+
+							#list stream
+							li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
+							if contentTypeInt == 0:
+								li.setInfo('music', {'duration': stream.duration})
+							elif contentTypeInt == 1:
+								li.setInfo('video', {'duration': stream.duration})
+							xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
+
+				#show next page marker if needed
+				if len(streamList) > 0:
+					page_no = page_no + 1
+					li = xbmcgui.ListItem('> '+str(page_no)+' >')
+					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no})
+					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+
 		#step 3: ...profit!
-		elif len(podcastList) > mode:
-			p = podcastList[mode]
-			mediaList = parsePodcastXml(p)
-			for m in mediaList:
-				li = xbmcgui.ListItem(m.date+" "+m.title, iconImage=p.img)
-				if contentTypeInt == 0:
-					li.setInfo('music', {'duration': m.length})
-				elif contentTypeInt == 1:
-					li.setInfo('video', {'duration': m.length})
-				xbmcplugin.addDirectoryItem(handle=handle, url=m.url, listitem=li)
+		else:
+			xbmcgui.Dialog().ok('RTVSlo.si', 'Invalid mode: '+str(mode))
+
+		#write contents
 		xbmcplugin.endOfDirectory(handle)
 
 	except Exception as e:
