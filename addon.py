@@ -120,7 +120,12 @@ if __name__ == "__main__":
 
 		#step 1: Collect underpants...
 		if mode == 0:
-			#mode == 0: list main menu (ODDAJE, ARHIV)
+			#mode == 0: list main menu (LIVE RADIO, ODDAJE, ARHIV)
+			#LIVE RADIO
+			if contentType == 'audio':
+				li = xbmcgui.ListItem('V živo >')
+				url = build_url(base, {'content_type': contentType, 'mode': 1})
+				xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 			#ARHIV 1/2
 			li = xbmcgui.ListItem('Nove oddaje >')
 			url = build_url(base, {'content_type': contentType, 'mode': 21})
@@ -135,6 +140,14 @@ if __name__ == "__main__":
 			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 
 		#step 2: ...?...
+		elif mode == 1:
+			#mode == 1: list radio stations (LIVE RADIO)
+			radioList = [['ra1', 'RA1', 'Radio prvi'], ['val202', 'VAL202', 'Val 202'], ['ars', 'ARS', 'ARS'], ['rakp', 'RAKP', 'Radio Koper'], ['rsi', 'RSI', 'Radio Si'], ['rmb', 'RAMB', 'Radio Maribor'], ['capo', 'CAPO', 'Radio Capodistria'], ['mmr', 'MMR', 'RA MMR']]
+			liveLink = 'http://mp3.rtvslo.si/'
+			liveThumb = 'http://img.rtvslo.si/_up/ava/archive2/Content/channel_logos/'
+			for radio in radioList:
+				li = xbmcgui.ListItem(radio[2], iconImage=liveThumb+radio[1]+'_thumb.jpg')
+				xbmcplugin.addDirectoryItem(handle=handle, url=liveLink+radio[0], listitem=li)
 		elif mode == 11:
 			#mode == 11: list letters menu (ODDAJE)
 			oddaje = ['A','B','C','Č','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','Š','T','U','V','W','Z','Ž','0']
