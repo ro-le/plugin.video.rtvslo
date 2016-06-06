@@ -56,30 +56,45 @@ def parseShowToStreamList(js):
 		streamList.append(Stream(stream['id'], stream['mediaType'], stream['title'], stream['date'], stream['duration'], stream['link'], stream['images']['thumb']))
 	return streamList
 
-def parseStreamToPlaylist(js):
+def parseStreamToPlaylist(js, folderType):
 	j = json.loads(js)
 	j = j['response']
 
-	#newer video streams usually have this format
+	typeOK = True
 	try:
-		playlist_type1 = j['addaptiveMedia']['hls']
-		return playlist_type1
+		mediaType = j['mediaType']
+		if folderType == 0 and mediaType == 'video':
+			typeOK = False
+		if folderType == 1 and mediaType == 'audio':
+			typeOK = False
 	except Exception as e:
 		pass
 
-	#audio streams and some older video streams have this format
-	try:
-		playlist_type2_part1 = j['mediaFiles'][0]['streamers']['http']
-		if playlist_type2_part1.find('ava_archive02') > 0:
-			playlist_type2_part1 = playlist_type2_part1.replace("ava_archive02", "podcast\/ava_archive02\/")
-		elif playlist_type2_part1.find('ava_archive01') > 0:
-			playlist_type2_part1 = playlist_type2_part1.replace("ava_archive01", "ava_archive01\/")
-		elif playlist_type2_part1.find('ava_archive00') > 0:
-			playlist_type2_part1 = playlist_type2_part1.replace("ava_archive00", "ava_archive00\/")
-		playlist_type2_part2 = j['mediaFiles'][0]['filename']
-		return playlist_type2_part1+playlist_type2_part2
-	except Exception as e:
-		pass
+	if typeOK:
+		#newer video streams usually have this format
+		try:
+			playlist_type1 = j['addaptiveMedia']['hls']
+			return playlist_type1
+		except Exception as e:
+			pass
+
+		#audio streams and some older video streams have this format
+		try:
+			playlist_type2_part1 = j['mediaFiles'][0]['streamers']['http']
+			if playlist_type2_part1.find('ava_archive03') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive03", "ava_archive03/")
+			elif playlist_type2_part1.find('ava_archive02') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive02", "podcast\/ava_archive02\/")
+			elif playlist_type2_part1.find('ava_archive01') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive01", "ava_archive01\/")
+			elif playlist_type2_part1.find('ava_archive00') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive00", "ava_archive00\/")
+			playlist_type2_part2 = j['mediaFiles'][0]['filename']
+			return playlist_type2_part1+playlist_type2_part2
+		except Exception as e:
+			pass
+	else:
+		return ''
 
 	#there is no hope anymore, you will be rickrolled :/
 	return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
@@ -230,7 +245,7 @@ if __name__ == "__main__":
 					else:
 						#parse json to get a playlist
 						js = js[x+1:y+1]
-						playlist = parseStreamToPlaylist(js)
+						playlist = parseStreamToPlaylist(js, contentTypeInt)
 
 						#list stream
 						li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
@@ -238,7 +253,8 @@ if __name__ == "__main__":
 							li.setInfo('music', {'duration': stream.duration})
 						elif contentTypeInt == 1:
 							li.setInfo('video', {'duration': stream.duration})
-						xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
+						if playlist:
+							xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
 
 				#show next page marker if needed
 				if len(streamList) > 0:
@@ -290,7 +306,7 @@ if __name__ == "__main__":
 						else:
 							#parse json to get a playlist
 							js = js[x+1:y+1]
-							playlist = parseStreamToPlaylist(js)
+							playlist = parseStreamToPlaylist(js, contentTypeInt)
 
 							#list stream
 							li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
@@ -298,7 +314,8 @@ if __name__ == "__main__":
 								li.setInfo('music', {'duration': stream.duration})
 							elif contentTypeInt == 1:
 								li.setInfo('video', {'duration': stream.duration})
-							xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
+							if playlist:
+								xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
 
 				#show next page marker if needed
 				if len(streamList) > 0:
@@ -350,7 +367,7 @@ if __name__ == "__main__":
 						else:
 							#parse json to get a playlist
 							js = js[x+1:y+1]
-							playlist = parseStreamToPlaylist(js)
+							playlist = parseStreamToPlaylist(js, contentTypeInt)
 
 							#list stream
 							li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
@@ -358,7 +375,8 @@ if __name__ == "__main__":
 								li.setInfo('music', {'duration': stream.duration})
 							elif contentTypeInt == 1:
 								li.setInfo('video', {'duration': stream.duration})
-							xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
+							if playlist:
+								xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
 
 				#show next page marker if needed
 				if len(streamList) > 0:

@@ -1,3 +1,5 @@
+v2.0.4
+ - added support for "ava_archive03" media
 v2.0.3
  - added new functionallity: live radio streaming
 v2.0.2
