@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
 			#url parameters
 			url_part1 = 'http://api.rtvslo.si/ava/getShowsSearch?client_id='
-			url_part2 = '&sort=title&order=asc&pageNumber=0&pageSize=100&hidden=0&start='
+			url_part2 = '&sort=title&order=asc&pageNumber=0&pageSize=200&hidden=0&start='
 			url_part3 = '&callback=jQuery111306175395867148092_1462381908718&_=1462381908719'
 			client_id = '82013fb3a531d5414f478747c1aca622'
 			start = letter
