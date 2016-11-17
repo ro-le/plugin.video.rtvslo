@@ -1,3 +1,5 @@
+v2.0.5
+ - fixed bug: script returns only first 100 shows for each letter
 v2.0.4
  - added support for "ava_archive03" media
 v2.0.3
