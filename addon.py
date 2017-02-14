@@ -160,8 +160,11 @@ if __name__ == "__main__":
 			radioList = [['ra1', 'RA1', 'Radio prvi'], ['val202', 'VAL202', 'Val 202'], ['ars', 'ARS', 'ARS'], ['rakp', 'RAKP', 'Radio Koper'], ['rsi', 'RSI', 'Radio Si'], ['rmb', 'RAMB', 'Radio Maribor'], ['capo', 'CAPO', 'Radio Capodistria'], ['mmr', 'MMR', 'RA MMR']]
 			liveLink = 'http://mp3.rtvslo.si/'
 			liveThumb = 'http://img.rtvslo.si/_up/ava/archive2/Content/channel_logos/'
+			loopIdx = 0
 			for radio in radioList:
+				loopIdx = loopIdx + 1
 				li = xbmcgui.ListItem(radio[2], iconImage=liveThumb+radio[1]+'_thumb.jpg')
+				li.setInfo('music', {'tracknumber': loopIdx, 'title': radio[2]})
 				xbmcplugin.addDirectoryItem(handle=handle, url=liveLink+radio[0], listitem=li)
 		elif mode == 11:
 			#mode == 11: list letters menu (ODDAJE)
@@ -225,6 +228,7 @@ if __name__ == "__main__":
 				streamList = parseShowToStreamList(js)
 
 				#find playlists and list streams
+				loopIdx = 0
 				for stream in streamList:
 
 					#url parameters
@@ -248,11 +252,12 @@ if __name__ == "__main__":
 						playlist = parseStreamToPlaylist(js, contentTypeInt)
 
 						#list stream
+						loopIdx = loopIdx + 1
 						li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
 						if contentTypeInt == 0:
-							li.setInfo('music', {'duration': stream.duration})
+							li.setInfo('music', {'tracknumber': loopIdx, 'duration': stream.duration, 'title': stream.date+' - '+stream.title})
 						elif contentTypeInt == 1:
-							li.setInfo('video', {'duration': stream.duration})
+							li.setInfo('video', {'tracknumber': loopIdx, 'duration': stream.duration, 'title': stream.date+' - '+stream.title})
 						if playlist:
 							xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
 
@@ -286,6 +291,7 @@ if __name__ == "__main__":
 				streamList = parseShowToStreamList(js)
 
 				#find playlists and list streams
+				loopIdx = 0
 				for stream in streamList:
 					if (contentTypeInt == 0 and stream.mediaType == 'audio') or (contentTypeInt == 1 and stream.mediaType == 'video'):
 						#url parameters
@@ -309,11 +315,12 @@ if __name__ == "__main__":
 							playlist = parseStreamToPlaylist(js, contentTypeInt)
 
 							#list stream
+							loopIdx = loopIdx + 1
 							li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
 							if contentTypeInt == 0:
-								li.setInfo('music', {'duration': stream.duration})
+								li.setInfo('music', {'tracknumber': loopIdx, 'duration': stream.duration, 'title': stream.date+' - '+stream.title})
 							elif contentTypeInt == 1:
-								li.setInfo('video', {'duration': stream.duration})
+								li.setInfo('video', {'tracknumber': loopIdx, 'duration': stream.duration, 'title': stream.date+' - '+stream.title})
 							if playlist:
 								xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
 
@@ -347,6 +354,7 @@ if __name__ == "__main__":
 				streamList = parseShowToStreamList(js)
 
 				#find playlists and list streams
+				loopIdx = 0
 				for stream in streamList:
 					if (contentTypeInt == 0 and stream.mediaType == 'audio') or (contentTypeInt == 1 and stream.mediaType == 'video'):
 						#url parameters
@@ -370,11 +378,12 @@ if __name__ == "__main__":
 							playlist = parseStreamToPlaylist(js, contentTypeInt)
 
 							#list stream
+							loopIdx = loopIdx + 1
 							li = xbmcgui.ListItem(stream.date+' - '+stream.title, iconImage=stream.thumbnail)
 							if contentTypeInt == 0:
-								li.setInfo('music', {'duration': stream.duration})
+								li.setInfo('music', {'tracknumber': loopIdx, 'duration': stream.duration, 'title': stream.date+' - '+stream.title})
 							elif contentTypeInt == 1:
-								li.setInfo('video', {'duration': stream.duration})
+								li.setInfo('video', {'tracknumber': loopIdx, 'duration': stream.duration, 'title': stream.date+' - '+stream.title})
 							if playlist:
 								xbmcplugin.addDirectoryItem(handle=handle, url=playlist, listitem=li)
 

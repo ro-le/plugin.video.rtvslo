@@ -1,3 +1,5 @@
+v2.0.6 (2017-02-14)
+ - fixed valentines day bug: no names for audio streams
 v2.0.5
  - fixed bug: script only listed first 100 shows for each selected letter (new limit is 200 shows per letter)
 v2.0.4
