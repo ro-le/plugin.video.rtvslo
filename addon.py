@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
 				#list shows
 				for show in showList:
-					if (contentType == 'audio' and show.mediaType == 'radio') or (contentType == 'video' and show.mediaType == 'tv'):
+					if (contentType == 'audio' and show.mediaType == 'radio') or (contentType == 'video' and show.mediaType == 'tv') or show.mediaType == 'mixed':
 						li = xbmcgui.ListItem(show.title, iconImage=show.thumbnail)
 						url = build_url(base, {'content_type': contentType, 'mode': 13, 'page': 0, 'id': show.showId})
 						xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)

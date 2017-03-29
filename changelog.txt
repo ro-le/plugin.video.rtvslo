@@ -1,3 +1,5 @@
+v2.0.7 (2017-03-29)
+ - fixed bug: streams listed as "mixed" missing, now showing in both video and audio categories
 v2.0.6 (2017-02-14)
  - fixed valentines day bug: no names for audio streams
 v2.0.5
