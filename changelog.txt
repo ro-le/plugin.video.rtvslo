@@ -1,3 +1,5 @@
+v2.0.8 (2017-11-06)
+ - added support for "ava_archive04" media
 v2.0.7 (2017-03-29)
  - fixed bug: streams listed as "mixed" missing, now showing in both video and audio categories
 v2.0.6 (2017-02-14)

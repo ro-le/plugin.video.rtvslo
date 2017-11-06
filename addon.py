@@ -81,7 +81,10 @@ def parseStreamToPlaylist(js, folderType):
 		#audio streams and some older video streams have this format
 		try:
 			playlist_type2_part1 = j['mediaFiles'][0]['streamers']['http']
-			if playlist_type2_part1.find('ava_archive03') > 0:
+			
+			if playlist_type2_part1.find('ava_archive04') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive04", "ava_archive04/")
+			elif playlist_type2_part1.find('ava_archive03') > 0:
 				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive03", "ava_archive03/")
 			elif playlist_type2_part1.find('ava_archive02') > 0:
 				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive02", "podcast\/ava_archive02\/")
@@ -94,10 +97,8 @@ def parseStreamToPlaylist(js, folderType):
 		except Exception as e:
 			pass
 	else:
-		return ''
-
-	#there is no hope anymore, you will be rickrolled :/
-	return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+		#there is no hope anymore, you will be rickrolled :/
+		return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 #######################################
 
 #main
