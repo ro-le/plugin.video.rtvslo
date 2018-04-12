@@ -1,5 +1,5 @@
 <?xml version="2.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.rtvslo" name="RTV Slovenija" version="2.0.8" provider-name="royle">
+<addon id="plugin.video.rtvslo" name="RTV Slovenija" version="2.0.9" provider-name="royle">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0"/>
 	</requires>
@@ -7,8 +7,8 @@
 		<provides>audio video</provides>
 	</extension>
 	<extension point="xbmc.addon.metadata">
-		<summary lang="en">Play video and audio podcasts from www.rtvslo.si</summary>
-		<summary lang="sl">Predvajaj video in avdio vsebine podcastov www.rtvslo.si</summary>
+		<summary lang="en">Play video and audio podcasts from 4d.rtvslo.si</summary>
+		<summary lang="sl">Predvajaj video in avdio vsebine podcastov 4d.rtvslo.si</summary>
 		<description lang="en">RTV Slovenia is a national radio and television public broadcast organization. With this plugin you can watch both video and audio podcasts published on their website.</description>
 		<description lang="sl">RTV Slovenija je javna, nacionalna radiotelevizijska organizacija. S tem vtičnikom si lahko ogledate vse televizijske in radijske posnetke oddaj (podcaste), ki so zbrani na njihovi spletni strani.</description>
 		<disclaimer lang="en"></disclaimer>

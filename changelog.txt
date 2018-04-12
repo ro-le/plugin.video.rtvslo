@@ -1,7 +1,11 @@
+v2.0.9 (2018-04-12)
+ - added new functionality: user login (some shows were no longer available without login)
+ - added support for "ava_archive05" media and further until "ava_archive09" (which doesn't yet exist at the time of writing)
+ - minor code optimizations
 v2.0.8 (2017-11-06)
  - added support for "ava_archive04" media
 v2.0.7 (2017-03-29)
- - fixed bug: streams listed as "mixed" missing, now showing in both video and audio categories
+ - fixed bug: streams listed as "mixed" not showing anywhere
 v2.0.6 (2017-02-14)
  - fixed valentines day bug: no names for audio streams
 v2.0.5
@@ -9,12 +13,12 @@ v2.0.5
 v2.0.4
  - added support for "ava_archive03" media
 v2.0.3
- - added new functionallity: live radio streaming
+ - added new functionality: live radio streaming
 v2.0.2
- - added new functionallity: new shows
- - added new functionallity: new clips
+ - added new functionality: new shows
+ - added new functionality: new clips
 v2.0.1
- - added new functionallity: "next page" markers
+ - added new functionality: "next page" markers
  - support for older "ava_archive01" media
 v2.0.0
  - Works with the new rtvslo website, since Jan 2016

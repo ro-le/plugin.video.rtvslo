@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
 import urllib
-import urllib2
 import urlparse
+import requests
 import json
 import xbmcgui
 import xbmcplugin
@@ -35,10 +35,23 @@ def build_url(base, query):
 	return base+'?'+urllib.urlencode(query)
 
 def downloadSourceToString(url):
-	rtvsloHtml = urllib2.urlopen(url)
-	rtvsloData = rtvsloHtml.read()
-	rtvsloHtml.close()
-	return rtvsloData
+	rtvsloHtml = requests.get(url)
+	return rtvsloHtml.text
+	
+def login(username, password):
+	url = 'http://www.rtvslo.si/prijava'
+	referurl = 'http://www.rtvslo.si/ttx'
+	payload = {'action':'login', 'pass':password, 'referer':referurl, 'submit':'Prijava', 'user':username}
+
+	s = requests.Session()
+	s.post(url, data=payload)
+	
+	a = ''
+	try:
+		a = str(s.cookies['APISESSION'])
+	except:
+		xbmcgui.Dialog().ok('RTV Slovenija', 'Prijava neuspešna!\n\nNekatere vsebine brez prijave niso dosegljive.\nVnos podatkov za prijavo je mogoč v nastavitvah.')
+	return a
 
 def parseShowsToShowList(js):
 	showList = []
@@ -82,7 +95,17 @@ def parseStreamToPlaylist(js, folderType):
 		try:
 			playlist_type2_part1 = j['mediaFiles'][0]['streamers']['http']
 			
-			if playlist_type2_part1.find('ava_archive04') > 0:
+			if playlist_type2_part1.find('ava_archive09') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive09", "ava_archive09/")
+			elif playlist_type2_part1.find('ava_archive08') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive08", "ava_archive08/")
+			elif playlist_type2_part1.find('ava_archive07') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive07", "ava_archive07/")
+			elif playlist_type2_part1.find('ava_archive06') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive06", "ava_archive06/")
+			elif playlist_type2_part1.find('ava_archive05') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive05", "ava_archive05/")
+			elif playlist_type2_part1.find('ava_archive04') > 0:
 				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive04", "ava_archive04/")
 			elif playlist_type2_part1.find('ava_archive03') > 0:
 				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive03", "ava_archive03/")
@@ -97,8 +120,8 @@ def parseStreamToPlaylist(js, folderType):
 		except Exception as e:
 			pass
 	else:
-		#there is no hope anymore, you will be rickrolled :/
-		return 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+		#there is no hope anymore, you will be rickrolled RTV style :/
+		return 'http://stream.rtvslo.si/ava_archive04/_definst_/2018/03/30/174529348.smil/playlist.m3u8'
 #######################################
 
 #main
@@ -133,26 +156,37 @@ if __name__ == "__main__":
 		id_ = idArg[0]
 		pageArg = args.get('page', ['0'])
 		page = int(pageArg[0])
+		apiArg = args.get('api', [''])
+		api = apiArg[0]
+		
+		#get settings
+		username = xbmcplugin.getSetting(handle, 'username')
+		password = xbmcplugin.getSetting(handle, 'password')
+		
+		#echo mode (debug)
+		#xbmcgui.Dialog().ok('RTV Slovenija', 'mode: '+str(mode))
 
 		#step 1: Collect underpants...
 		if mode == 0:
 			#mode == 0: list main menu (LIVE RADIO, ODDAJE, ARHIV)
+			#login
+			api = login(username, password)
 			#LIVE RADIO
 			if contentType == 'audio':
 				li = xbmcgui.ListItem('V živo >')
-				url = build_url(base, {'content_type': contentType, 'mode': 1})
+				url = build_url(base, {'content_type': contentType, 'mode': 1, 'api': api})
 				xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 			#ARHIV 1/2
 			li = xbmcgui.ListItem('Nove oddaje >')
-			url = build_url(base, {'content_type': contentType, 'mode': 21})
+			url = build_url(base, {'content_type': contentType, 'mode': 21, 'api': api})
 			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 			#ARHIV 2/2
 			li = xbmcgui.ListItem('Novi prispevki >')
-			url = build_url(base, {'content_type': contentType, 'mode': 31})
+			url = build_url(base, {'content_type': contentType, 'mode': 31, 'api': api})
 			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 			#ODDAJE
 			li = xbmcgui.ListItem('Arhiv oddaj >')
-			url = build_url(base, {'content_type': contentType, 'mode': 11})
+			url = build_url(base, {'content_type': contentType, 'mode': 11, 'api': api})
 			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 
 		#step 2: ...?...
@@ -172,7 +206,7 @@ if __name__ == "__main__":
 			oddaje = ['A','B','C','Č','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','Š','T','U','V','W','Z','Ž','0']
 			for o in oddaje:
 				li = xbmcgui.ListItem(o)
-				url = build_url(base, {'content_type': contentType, 'mode': 12, 'letter': o})
+				url = build_url(base, {'content_type': contentType, 'mode': 12, 'letter': o, 'api': api})
 				xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 		elif mode == 12:
 			#mode == 12: letter selected, list shows (ODDAJE)
@@ -191,7 +225,7 @@ if __name__ == "__main__":
 			x = js.find('({')
 			y = js.rfind('});')
 			if x < 0 or y < 0:
-				xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+				xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 			else:
 				#parse json to a list of shows
 				js = js[x+1:y+1]
@@ -201,7 +235,7 @@ if __name__ == "__main__":
 				for show in showList:
 					if (contentType == 'audio' and show.mediaType == 'radio') or (contentType == 'video' and show.mediaType == 'tv') or show.mediaType == 'mixed':
 						li = xbmcgui.ListItem(show.title, iconImage=show.thumbnail)
-						url = build_url(base, {'content_type': contentType, 'mode': 13, 'page': 0, 'id': show.showId})
+						url = build_url(base, {'content_type': contentType, 'mode': 13, 'page': 0, 'id': show.showId, 'api': api})
 						xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 		elif mode == 13:
 			#mode == 13: show selected, list streams (ODDAJE)
@@ -222,7 +256,7 @@ if __name__ == "__main__":
 			x = js.find('({')
 			y = js.rfind('});')
 			if x < 0 or y < 0:
-				xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+				xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 			else:
 				#parse json to a list of streams
 				js = js[x+1:y+1]
@@ -231,22 +265,22 @@ if __name__ == "__main__":
 				#find playlists and list streams
 				loopIdx = 0
 				for stream in streamList:
-
+					
 					#url parameters
 					url_part1 = 'http://api.rtvslo.si/ava/getRecording/'
-					url_part2 = '?client_id='
-					url_part3 = '&callback=jQuery1113023734881856870338_1462389077542&_=1462389077543'
-					client_id = '82013fb3a531d5414f478747c1aca622'
 					recording = stream.streamId
+					url_part2 = '?callback=ava_666&client_id='
+					client_id = '82013fb3a531d5414f478747c1aca622'
+					url_part3 = '&session_id='
 
 					#download response from rtvslo api
-					js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3)
-
+					js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3+api)
+					
 					#extract json from response
 					x = js.find('({')
 					y = js.rfind('});')
 					if x < 0 or y < 0:
-						xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+						xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 					else:
 						#parse json to get a playlist
 						js = js[x+1:y+1]
@@ -266,7 +300,7 @@ if __name__ == "__main__":
 				if len(streamList) > 0:
 					page_no = page_no + 1
 					li = xbmcgui.ListItem('> '+str(page_no)+' >')
-					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no, 'id': show_id})
+					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no, 'id': show_id, 'api': api})
 					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 		elif mode == 21:
 			#mode == 21: list new shows (ARHIV 1/2)
@@ -285,7 +319,7 @@ if __name__ == "__main__":
 			x = js.find('({')
 			y = js.rfind('});')
 			if x < 0 or y < 0:
-				xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+				xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 			else:
 				#parse json to a list of streams
 				js = js[x+1:y+1]
@@ -297,19 +331,19 @@ if __name__ == "__main__":
 					if (contentTypeInt == 0 and stream.mediaType == 'audio') or (contentTypeInt == 1 and stream.mediaType == 'video'):
 						#url parameters
 						url_part1 = 'http://api.rtvslo.si/ava/getRecording/'
-						url_part2 = '?client_id='
-						url_part3 = '&callback=jQuery1113023734881856870338_1462389077542&_=1462389077543'
-						client_id = '82013fb3a531d5414f478747c1aca622'
 						recording = stream.streamId
+						url_part2 = '?callback=ava_666&client_id='
+						client_id = '82013fb3a531d5414f478747c1aca622'
+						url_part3 = '&session_id='
 
 						#download response from rtvslo api
-						js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3)
+						js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3+api)
 
 						#extract json from response
 						x = js.find('({')
 						y = js.rfind('});')
 						if x < 0 or y < 0:
-							xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+							xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 						else:
 							#parse json to get a playlist
 							js = js[x+1:y+1]
@@ -329,7 +363,7 @@ if __name__ == "__main__":
 				if len(streamList) > 0:
 					page_no = page_no + 1
 					li = xbmcgui.ListItem('> '+str(page_no)+' >')
-					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no})
+					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no, 'api': api})
 					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 		elif mode == 31:
 			#mode == 21: list new news stories (ARHIV 2/2)
@@ -348,7 +382,7 @@ if __name__ == "__main__":
 			x = js.find('({')
 			y = js.rfind('});')
 			if x < 0 or y < 0:
-				xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+				xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 			else:
 				#parse json to a list of streams
 				js = js[x+1:y+1]
@@ -360,19 +394,19 @@ if __name__ == "__main__":
 					if (contentTypeInt == 0 and stream.mediaType == 'audio') or (contentTypeInt == 1 and stream.mediaType == 'video'):
 						#url parameters
 						url_part1 = 'http://api.rtvslo.si/ava/getRecording/'
-						url_part2 = '?client_id='
-						url_part3 = '&callback=jQuery1113023734881856870338_1462389077542&_=1462389077543'
-						client_id = '82013fb3a531d5414f478747c1aca622'
 						recording = stream.streamId
+						url_part2 = '?callback=ava_666&client_id='
+						client_id = '82013fb3a531d5414f478747c1aca622'
+						url_part3 = '&session_id='
 
 						#download response from rtvslo api
-						js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3)
+						js = downloadSourceToString(url_part1+recording+url_part2+client_id+url_part3+api)
 
 						#extract json from response
 						x = js.find('({')
 						y = js.rfind('});')
 						if x < 0 or y < 0:
-							xbmcgui.Dialog().ok('RTVSlo.si', 'API response is invalid! :o')
+							xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 						else:
 							#parse json to get a playlist
 							js = js[x+1:y+1]
@@ -392,15 +426,15 @@ if __name__ == "__main__":
 				if len(streamList) > 0:
 					page_no = page_no + 1
 					li = xbmcgui.ListItem('> '+str(page_no)+' >')
-					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no})
+					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no, 'api': api})
 					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 
 		#step 3: ...profit!
 		else:
-			xbmcgui.Dialog().ok('RTVSlo.si', 'Invalid mode: '+str(mode))
+			xbmcgui.Dialog().ok('RTV Slovenija', 'Invalid mode: '+str(mode))
 
 		#write contents
 		xbmcplugin.endOfDirectory(handle)
 
 	except Exception as e:
-		xbmcgui.Dialog().ok('RTVSlo.si', 'OMG, an error has occured?!\n'+e.message)
+		xbmcgui.Dialog().ok('RTV Slovenija', 'Error: \n'+e.message)
