@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="windows-1250" standalone="yes"?>
 <settings>
     <category label="Nastavitve">
-        <setting type="text" id="username" label="UporabniĹˇko ime" default="" visible="true"/>
+        <setting type="text" id="username" label="Uporabniško ime" default="" visible="true"/>
 		<setting type="text" id="password" label="Geslo" default="" visible="true" option="hidden"/>
+		<setting type="bool" id="debug" label="Razhroščevanje" default="false" visible="true"/>
     </category>
 </settings>
