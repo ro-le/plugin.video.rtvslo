@@ -1,3 +1,6 @@
+v2.1.0 (2019-01-14)
+ - fixed login bug
+ - added new functionality: debug (available in settings)
 v2.0.9 (2018-04-12)
  - added new functionality: user login (some shows were no longer available without login)
  - added support for "ava_archive05" media and further until "ava_archive09" (which doesn't yet exist at the time of writing)

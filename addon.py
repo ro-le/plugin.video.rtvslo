@@ -39,7 +39,7 @@ def downloadSourceToString(url):
 	return rtvsloHtml.text
 	
 def login(username, password):
-	url = 'http://www.rtvslo.si/prijava'
+	url = 'https://www.rtvslo.si/prijava'
 	referurl = 'http://www.rtvslo.si/ttx'
 	payload = {'action':'login', 'pass':password, 'referer':referurl, 'submit':'Prijava', 'user':username}
 
@@ -49,6 +49,8 @@ def login(username, password):
 	a = ''
 	try:
 		a = str(s.cookies['APISESSION'])
+		if debug:
+			xbmcgui.Dialog().ok('RTV Slovenija', 'Razhroščevanje vklopljeno - prijavljeni uporabnik: '+str(s.cookies['APISESSION_USER_NAME']))
 	except:
 		xbmcgui.Dialog().ok('RTV Slovenija', 'Prijava neuspešna!\n\nNekatere vsebine brez prijave niso dosegljive.\nVnos podatkov za prijavo je mogoč v nastavitvah.')
 	return a
@@ -162,9 +164,15 @@ if __name__ == "__main__":
 		#get settings
 		username = xbmcplugin.getSetting(handle, 'username')
 		password = xbmcplugin.getSetting(handle, 'password')
+		debug = xbmcplugin.getSetting(handle, 'debug')
+		if debug == 'true':
+			debug = True
+		else:
+			debug = False
 		
 		#echo mode (debug)
-		#xbmcgui.Dialog().ok('RTV Slovenija', 'mode: '+str(mode))
+		if debug:
+			xbmcgui.Dialog().ok('RTV Slovenija', 'mode: '+str(mode))
 
 		#step 1: Collect underpants...
 		if mode == 0:
@@ -225,7 +233,8 @@ if __name__ == "__main__":
 			x = js.find('({')
 			y = js.rfind('});')
 			if x < 0 or y < 0:
-				xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
+				if debug:
+					xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 			else:
 				#parse json to a list of shows
 				js = js[x+1:y+1]
@@ -256,7 +265,8 @@ if __name__ == "__main__":
 			x = js.find('({')
 			y = js.rfind('});')
 			if x < 0 or y < 0:
-				xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
+				if debug:
+					xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 			else:
 				#parse json to a list of streams
 				js = js[x+1:y+1]
@@ -280,7 +290,8 @@ if __name__ == "__main__":
 					x = js.find('({')
 					y = js.rfind('});')
 					if x < 0 or y < 0:
-						xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
+						if debug:
+							xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 					else:
 						#parse json to get a playlist
 						js = js[x+1:y+1]
@@ -319,7 +330,8 @@ if __name__ == "__main__":
 			x = js.find('({')
 			y = js.rfind('});')
 			if x < 0 or y < 0:
-				xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
+				if debug:
+					xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 			else:
 				#parse json to a list of streams
 				js = js[x+1:y+1]
@@ -343,7 +355,8 @@ if __name__ == "__main__":
 						x = js.find('({')
 						y = js.rfind('});')
 						if x < 0 or y < 0:
-							xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
+							if debug:
+								xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 						else:
 							#parse json to get a playlist
 							js = js[x+1:y+1]
@@ -382,7 +395,8 @@ if __name__ == "__main__":
 			x = js.find('({')
 			y = js.rfind('});')
 			if x < 0 or y < 0:
-				xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
+				if debug:
+					xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 			else:
 				#parse json to a list of streams
 				js = js[x+1:y+1]
@@ -406,7 +420,8 @@ if __name__ == "__main__":
 						x = js.find('({')
 						y = js.rfind('});')
 						if x < 0 or y < 0:
-							xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
+							if debug:
+								xbmcgui.Dialog().ok('RTV Slovenija', 'API response is invalid! :o')
 						else:
 							#parse json to get a playlist
 							js = js[x+1:y+1]
@@ -431,10 +446,12 @@ if __name__ == "__main__":
 
 		#step 3: ...profit!
 		else:
-			xbmcgui.Dialog().ok('RTV Slovenija', 'Invalid mode: '+str(mode))
+			if debug:
+				xbmcgui.Dialog().ok('RTV Slovenija', 'Invalid mode: '+str(mode))
 
 		#write contents
 		xbmcplugin.endOfDirectory(handle)
 
 	except Exception as e:
-		xbmcgui.Dialog().ok('RTV Slovenija', 'Error: \n'+e.message)
+		if debug:
+			xbmcgui.Dialog().ok('RTV Slovenija', 'Error: \n'+e.message)
