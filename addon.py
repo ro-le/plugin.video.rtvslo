@@ -28,6 +28,14 @@ class Stream():
 		self.duration = duration
 		self.link = link
 		self.thumbnail = thumbnail
+
+class Live():
+	'LIVE'
+	def __init__(self, mediaType, title, link, thumbnail):
+		self.mediaType = mediaType
+		self.title = title
+		self.link = link
+		self.thumbnail = thumbnail
 #######################################
 
 #functions
@@ -52,7 +60,7 @@ def login(username, password):
 		if debug:
 			xbmcgui.Dialog().ok('RTV Slovenija', 'Razhroščevanje vklopljeno - prijavljeni uporabnik: '+str(s.cookies['APISESSION_USER_NAME']))
 	except:
-		xbmcgui.Dialog().ok('RTV Slovenija', 'Prijava neuspešna!\n\nNekatere vsebine brez prijave niso dosegljive.\nVnos podatkov za prijavo je mogoč v nastavitvah.')
+		xbmcgui.Dialog().ok('RTV Slovenija', 'Prijava neuspešna!\n\nNekatere vsebine brez prijave na portalu rtvslo.si niso dosegljive.\nVnos podatkov za prijavo je mogoč v nastavitvah.')
 	return a
 
 def parseShowsToShowList(js):
@@ -124,6 +132,20 @@ def parseStreamToPlaylist(js, folderType):
 	else:
 		#there is no hope anymore, you will be rickrolled RTV style :/
 		return 'http://stream.rtvslo.si/ava_archive04/_definst_/2018/03/30/174529348.smil/playlist.m3u8'
+
+def parseLiveStream(js):
+	try:
+		j = json.loads(js)
+		j = j['response']
+		live_media = j['mediaType']
+		live_title = j['title']
+		live_link = j['mediaFiles'][0]['streamer']+j['mediaFiles'][0]['file']
+		live_thumb = j['images']['orig']
+		return Live(live_media, live_title, live_link, live_thumb)
+	except Exception as e:
+		if debug:
+			xbmcgui.Dialog().ok('RTV Slovenija', 'API response for live stream is invalid! :o')
+		pass
 #######################################
 
 #main
@@ -173,17 +195,16 @@ if __name__ == "__main__":
 		#echo mode (debug)
 		if debug:
 			xbmcgui.Dialog().ok('RTV Slovenija', 'mode: '+str(mode))
-
+#-----------------------
 		#step 1: Collect underpants...
 		if mode == 0:
-			#mode == 0: list main menu (LIVE RADIO, ODDAJE, ARHIV)
+			#mode == 0: list main menu (LIVE, ODDAJE, ARHIV)
 			#login
 			api = login(username, password)
-			#LIVE RADIO
-			if contentType == 'audio':
-				li = xbmcgui.ListItem('V živo >')
-				url = build_url(base, {'content_type': contentType, 'mode': 1, 'api': api})
-				xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+			#LIVE
+			li = xbmcgui.ListItem('V živo >')
+			url = build_url(base, {'content_type': contentType, 'mode': 1, 'api': api})
+			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
 			#ARHIV 1/2
 			li = xbmcgui.ListItem('Nove oddaje >')
 			url = build_url(base, {'content_type': contentType, 'mode': 21, 'api': api})
@@ -196,19 +217,34 @@ if __name__ == "__main__":
 			li = xbmcgui.ListItem('Arhiv oddaj >')
 			url = build_url(base, {'content_type': contentType, 'mode': 11, 'api': api})
 			xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
-
+#-----------------------
 		#step 2: ...?...
 		elif mode == 1:
-			#mode == 1: list radio stations (LIVE RADIO)
-			radioList = [['ra1', 'RA1', 'Radio prvi'], ['val202', 'VAL202', 'Val 202'], ['ars', 'ARS', 'ARS'], ['rakp', 'RAKP', 'Radio Koper'], ['rsi', 'RSI', 'Radio Si'], ['rmb', 'RAMB', 'Radio Maribor'], ['capo', 'CAPO', 'Radio Capodistria'], ['mmr', 'MMR', 'RA MMR']]
-			liveLink = 'http://mp3.rtvslo.si/'
-			liveThumb = 'http://img.rtvslo.si/_up/ava/archive2/Content/channel_logos/'
+			#mode == 1: list live streams (LIVE)
+			mediaList = []
+			if contentType == 'audio':
+				mediaList = ['ra.a1', 'ra.val202', 'ra.ars', 'ra.rsi', 'ra.mb1', 'ra.kp', 'ra.capo', 'ra.mmr']#, 'ra.sport202']
+			else:
+				mediaList = ['tv.slo1', 'tv.slo2', 'tv.slo3', 'tv.kp1', 'tv.mb1', 'tv.mmctv']
+			
+			#api link
+			liveApiA = 'http://api.rtvslo.si/ava/getLiveStream/'
+			liveApiB = '?client_id=82013fb3a531d5414f478747c1aca622'
+			
 			loopIdx = 0
-			for radio in radioList:
-				loopIdx = loopIdx + 1
-				li = xbmcgui.ListItem(radio[2], iconImage=liveThumb+radio[1]+'_thumb.jpg')
-				li.setInfo('music', {'tracknumber': loopIdx, 'title': radio[2]})
-				xbmcplugin.addDirectoryItem(handle=handle, url=liveLink+radio[0], listitem=li)
+			for media in mediaList:
+			
+				#download response from rtvslo api
+				js = downloadSourceToString(liveApiA+media+liveApiB)
+				liveStream = parseLiveStream(js)
+				
+				#list live streams
+				if isinstance(liveStream, Live):
+					loopIdx = loopIdx + 1
+					li = xbmcgui.ListItem(liveStream.title, iconImage=liveStream.thumbnail)
+					li.setInfo('tvshows', {'tracknumber': loopIdx, 'title': liveStream.title})
+					xbmcplugin.addDirectoryItem(handle=handle, url=liveStream.link, listitem=li)
+#-----------------------
 		elif mode == 11:
 			#mode == 11: list letters menu (ODDAJE)
 			oddaje = ['A','B','C','Č','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','Š','T','U','V','W','Z','Ž','0']
@@ -216,6 +252,7 @@ if __name__ == "__main__":
 				li = xbmcgui.ListItem(o)
 				url = build_url(base, {'content_type': contentType, 'mode': 12, 'letter': o, 'api': api})
 				xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+#-----------------------
 		elif mode == 12:
 			#mode == 12: letter selected, list shows (ODDAJE)
 
@@ -246,6 +283,7 @@ if __name__ == "__main__":
 						li = xbmcgui.ListItem(show.title, iconImage=show.thumbnail)
 						url = build_url(base, {'content_type': contentType, 'mode': 13, 'page': 0, 'id': show.showId, 'api': api})
 						xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+#-----------------------
 		elif mode == 13:
 			#mode == 13: show selected, list streams (ODDAJE)
 
@@ -313,6 +351,7 @@ if __name__ == "__main__":
 					li = xbmcgui.ListItem('> '+str(page_no)+' >')
 					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no, 'id': show_id, 'api': api})
 					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+#-----------------------
 		elif mode == 21:
 			#mode == 21: list new shows (ARHIV 1/2)
 
@@ -378,8 +417,9 @@ if __name__ == "__main__":
 					li = xbmcgui.ListItem('> '+str(page_no)+' >')
 					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no, 'api': api})
 					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
+#-----------------------
 		elif mode == 31:
-			#mode == 21: list new news stories (ARHIV 2/2)
+			#mode == 31: list new news stories (ARHIV 2/2)
 
 			#url parameters
 			url_part1 = 'http://api.rtvslo.si/ava/getSearch?client_id='
@@ -443,7 +483,7 @@ if __name__ == "__main__":
 					li = xbmcgui.ListItem('> '+str(page_no)+' >')
 					url = build_url(base, {'content_type': contentType, 'mode': mode, 'page': page_no, 'api': api})
 					xbmcplugin.addDirectoryItem(handle=handle, url=url, listitem=li, isFolder=True)
-
+#-----------------------
 		#step 3: ...profit!
 		else:
 			if debug:
