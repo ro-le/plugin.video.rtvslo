@@ -48,12 +48,13 @@ def downloadSourceToString(url):
 	
 def login(username, password):
 	url = 'https://www.rtvslo.si/prijava'
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 	referurl = 'http://www.rtvslo.si/ttx'
 	payload = {'action':'login', 'pass':password, 'referer':referurl, 'submit':'Prijava', 'user':username}
 
 	s = requests.Session()
-	s.post(url, data=payload)
-	
+	s.post(url, headers=headers, data=payload)
+
 	a = ''
 	try:
 		a = str(s.cookies['APISESSION'])

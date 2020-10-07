@@ -1,5 +1,5 @@
 <?xml version="2.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.rtvslo" name="RTV Slovenija" version="2.1.1" provider-name="royle">
+<addon id="plugin.video.rtvslo" name="RTV Slovenija" version="2.1.2" provider-name="royle">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0"/>
 	</requires>
