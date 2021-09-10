@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 import sys
 import urllib
 import urlparse
@@ -105,34 +106,22 @@ def parseStreamToPlaylist(js, folderType):
 		#audio streams and some older video streams have this format
 		try:
 			playlist_type2_part1 = j['mediaFiles'][0]['streamers']['http']
-			
-			if playlist_type2_part1.find('ava_archive09') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive09", "ava_archive09/")
-			elif playlist_type2_part1.find('ava_archive08') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive08", "ava_archive08/")
-			elif playlist_type2_part1.find('ava_archive07') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive07", "ava_archive07/")
-			elif playlist_type2_part1.find('ava_archive06') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive06", "ava_archive06/")
-			elif playlist_type2_part1.find('ava_archive05') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive05", "ava_archive05/")
-			elif playlist_type2_part1.find('ava_archive04') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive04", "ava_archive04/")
-			elif playlist_type2_part1.find('ava_archive03') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive03", "ava_archive03/")
-			elif playlist_type2_part1.find('ava_archive02') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive02", "podcast\/ava_archive02\/")
-			elif playlist_type2_part1.find('ava_archive01') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive01", "ava_archive01\/")
-			elif playlist_type2_part1.find('ava_archive00') > 0:
-				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive00", "ava_archive00\/")
 			playlist_type2_part2 = j['mediaFiles'][0]['filename']
-			return playlist_type2_part1+playlist_type2_part2
+			
+			#replace some characters if needed
+			if playlist_type2_part1.find('ava_archive02') > 0:
+				playlist_type2_part1 = playlist_type2_part1.replace("ava_archive02", "podcast\/ava_archive02\/")
+			else:
+				regex_result = re.search(r'ava_archive[0-9]+', playlist_type2_part1)
+				if regex_result is not None:
+					playlist_type2_part1 = re.sub(r'ava_archive[0-9]+', regex_result.group()+'/', playlist_type2_part1)
+
+			return playlist_type2_part1 + playlist_type2_part2
 		except Exception as e:
 			pass
 	else:
-		#there is no hope anymore, you will be rickrolled RTV style :/
-		return 'http://stream.rtvslo.si/ava_archive04/_definst_/2018/03/30/174529348.smil/playlist.m3u8'
+		#something went wrong
+		return False
 
 def parseLiveStream(js):
 	try:
